@@ -8,33 +8,43 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AccessibilityNew
 import androidx.compose.material.icons.rounded.Memory
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.rounded.Visibility
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hibernateprox.app.R
 import com.hibernateprox.app.core.designsystem.LocalNeonColors
 import com.hibernateprox.app.core.designsystem.NeonGlassCard
 import com.hibernateprox.app.core.designsystem.NeonStatusPill
+import com.hibernateprox.app.core.model.StopMode
+import com.hibernateprox.app.ui.components.AccessibilityDisclosureDialog
 
 @Composable
 fun DashboardScreen(
@@ -43,6 +53,17 @@ fun DashboardScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val neon = LocalNeonColors.current
+
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refreshMetrics()
+    }
+
+    if (state.showDisclosureDialog) {
+        AccessibilityDisclosureDialog(
+            onAccept = viewModel::openAccessibilitySettings,
+            onDecline = viewModel::dismissDisclosure,
+        )
+    }
 
     LazyColumn(
         modifier = modifier
@@ -84,9 +105,108 @@ fun DashboardScreen(
 
         item {
             HibernatePulseButton(
-                isRunning = state.isPreviewPulsing,
-                onClick = viewModel::triggerPulsePreview,
+                isRunning = state.isBatchRunning,
+                onClick = viewModel::onHibernateAllClick,
             )
+        }
+
+        state.lastBatchSummary?.let { summary ->
+            item {
+                NeonGlassCard(
+                    accentColor = neon.emeraldPulse,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 680.dp)
+                        .testTag("last_batch_summary_card"),
+                ) {
+                    Text(
+                        text = stringResource(
+                            R.string.stop_batch_summary,
+                            summary.stoppedCount,
+                            summary.alreadyIdleCount,
+                            summary.failedCount,
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+        }
+
+        item {
+            NeonGlassCard(
+                accentColor = if (state.isAccessibilityEnabled) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    neon.amberVolt
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 680.dp)
+                    .testTag("foreground_monitor_card"),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(R.string.fg_monitor_title),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Icon(
+                        imageVector = Icons.Rounded.Visibility,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                Spacer(modifier = Modifier.height(6.dp))
+                if (!state.isAccessibilityEnabled) {
+                    Text(
+                        text = stringResource(R.string.fg_monitor_disabled),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Button(
+                        onClick = viewModel::openDisclosure,
+                        modifier = Modifier
+                            .minimumInteractiveComponentSize()
+                            .testTag("dashboard_enable_a11y_button"),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.AccessibilityNew,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(stringResource(R.string.action_enable_accessibility))
+                    }
+                } else {
+                    val activePkg = state.currentForegroundPackage
+                    Text(
+                        text = if (activePkg != null) {
+                            stringResource(R.string.fg_monitor_current, activePkg)
+                        } else {
+                            stringResource(R.string.fg_monitor_waiting)
+                        },
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    if (state.recentTransitions.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        val recentList = state.recentTransitions.take(3).joinToString(" → ") {
+                            it.packageName.substringAfterLast('.')
+                        }
+                        Text(
+                            text = stringResource(R.string.fg_monitor_recent, recentList),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
+            }
         }
 
         item {
@@ -121,7 +241,12 @@ fun DashboardScreen(
                         state.telemetry.freeStorageGb,
                         state.telemetry.totalStorageGb,
                     ),
-                    secondaryText = stringResource(R.string.dashboard_last_run_never),
+                    secondaryText = state.lastRunTimestampMs?.let { ts ->
+                        val formatted = java.text.DateFormat.getTimeInstance(
+                            java.text.DateFormat.SHORT,
+                        ).format(java.util.Date(ts))
+                        stringResource(R.string.dashboard_last_run_at, formatted)
+                    } ?: stringResource(R.string.dashboard_last_run_never),
                     progress = state.telemetry.storageUsageFraction,
                     icon = Icons.Rounded.Storage,
                     accentColor = MaterialTheme.colorScheme.secondary,
@@ -133,12 +258,17 @@ fun DashboardScreen(
         }
 
         item {
+            val modeAccent = if (state.activeMode == StopMode.ACCESSIBILITY) {
+                neon.emeraldPulse
+            } else {
+                neon.amberVolt
+            }
             NeonGlassCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .widthIn(max = 680.dp)
                     .testTag("active_mode_card"),
-                accentColor = neon.amberVolt,
+                accentColor = modeAccent,
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -153,7 +283,7 @@ fun DashboardScreen(
                     Icon(
                         imageVector = Icons.Rounded.Tune,
                         contentDescription = stringResource(R.string.cd_mode_status_icon),
-                        tint = neon.amberVolt,
+                        tint = modeAccent,
                     )
                 }
                 Spacer(modifier = Modifier.height(6.dp))
@@ -168,12 +298,6 @@ fun DashboardScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Spacer(modifier = Modifier.height(10.dp))
-                Text(
-                    text = stringResource(R.string.dashboard_phase1_notice),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                )
             }
         }
     }
@@ -186,7 +310,7 @@ private fun MetricGaugeCard(
     secondaryText: String,
     progress: Float,
     icon: ImageVector,
-    accentColor: androidx.compose.ui.graphics.Color,
+    accentColor: Color,
     modifier: Modifier = Modifier,
 ) {
     NeonGlassCard(modifier = modifier, accentColor = accentColor) {

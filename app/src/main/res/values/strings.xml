@@ -65,4 +65,57 @@
     <string name="cd_hibernate_button">Hibernate all selected background apps</string>
     <string name="cd_mode_status_icon">Active stop mode status</string>
     <string name="cd_offline_shield">Offline privacy shield</string>
+    <string name="cd_protected_lock">Protected Safe-List app</string>
+    <string name="cd_force_stop_app">Force stop %1$s</string>
+
+    <!-- Accessibility Service & Prominent Disclosure -->
+    <string name="accessibility_service_label">HibernatePro X Stop Engine</string>
+    <string name="accessibility_service_summary">Detects active foreground app switches and automates tapping Force Stop on System App Info.</string>
+    <string name="accessibility_service_description">HibernatePro X uses Accessibility solely to observe foreground app package switches and tap the Force Stop and confirmation buttons inside your device\'s System App Info screen when you trigger hibernation. It never reads or transmits personal screen text, passwords, or messages.</string>
+    <string name="disclosure_title">Accessibility Service Disclosure</string>
+    <string name="disclosure_body">HibernatePro X requests the Android AccessibilityService permission for two strictly on-device tasks:\n\n1. Detect foreground app changes (package name only) so you can see which app is active and exclude it from auto-stop.\n2. Automate tapping \"Force stop\" and its confirmation dialog inside System Settings &gt; App Info when you tap Force Stop or Hibernate All.\n\nPrivacy Guarantee: HibernatePro X never inspects screen content outside System Settings, never records keystrokes, and has zero internet permission.</string>
+    <string name="disclosure_accept">Agree &amp; Open Settings</string>
+    <string name="disclosure_decline">Not Now</string>
+    <string name="action_enable_accessibility">Enable Accessibility</string>
+    <string name="action_open_app_info">App Info</string>
+    <string name="action_force_stop">Force Stop</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_refresh">Refresh</string>
+
+    <!-- Foreground App Monitor -->
+    <string name="fg_monitor_title">Live Foreground Detector</string>
+    <string name="fg_monitor_waiting">Waiting for Accessibility window events…</string>
+    <string name="fg_monitor_disabled">Enable Accessibility Service to detect foreground app transitions in real time.</string>
+    <string name="fg_monitor_current">Active Window: %1$s</string>
+    <string name="fg_monitor_recent">Recent switches: %1$s</string>
+
+    <!-- Apps Screen & Force-Stop Status -->
+    <string name="apps_search_hint">Search apps or package…</string>
+    <string name="apps_filter_all">All</string>
+    <string name="apps_filter_active">Active</string>
+    <string name="apps_filter_user">User</string>
+    <string name="apps_filter_system">System</string>
+    <string name="apps_filter_safelist">Safe-List</string>
+    <string name="apps_badge_stopped">HIBERNATED</string>
+    <string name="apps_badge_running">ACTIVE</string>
+    <string name="apps_badge_protected">PROTECTED</string>
+    <string name="apps_empty">No packages match your current filter.</string>
+    <string name="stop_status_opening">Opening System App Info for %1$s…</string>
+    <string name="stop_status_clicking">Locating Force Stop button for %1$s…</string>
+    <string name="stop_status_confirming">Confirming Force Stop dialog for %1$s…</string>
+    <string name="stop_status_verifying">Verifying stopped state for %1$s…</string>
+    <string name="stop_result_verified">Verified stopped: %1$s</string>
+    <string name="stop_result_already_stopped">%1$s is already hibernated</string>
+    <string name="stop_result_not_found">Force Stop button unavailable or disabled for %1$s</string>
+    <string name="stop_result_timeout">Timed out on App Info screen for %1$s</string>
+    <string name="stop_result_need_a11y">Enable Accessibility Service first to automate Force Stop.</string>
+    <string name="stop_batch_summary">Batch complete: %1$d stopped, %2$d already idle, %3$d failed.</string>
+    <string name="apps_filter_whitelisted">Whitelist</string>
+    <string name="apps_filter_blacklisted">Blacklist</string>
+    <string name="rule_default">Default</string>
+    <string name="rule_whitelist">Whitelist</string>
+    <string name="rule_blacklist">Blacklist</string>
+    <string name="apps_system_tag">SYSTEM</string>
+    <string name="apps_user_tag">USER</string>
+    <string name="dashboard_last_run_at">Last run: %1$s</string>
 </resources>
