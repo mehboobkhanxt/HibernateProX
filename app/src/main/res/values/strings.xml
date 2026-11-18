@@ -1,0 +1,68 @@
+<resources>
+    <string name="app_name">HibernatePro X</string>
+    <string name="app_tagline">Zero-telemetry on-device optimizer</string>
+
+    <!-- Navigation Destinations -->
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_apps">Apps</string>
+    <string name="nav_profiles">Profiles</string>
+    <string name="nav_automation">Automation</string>
+    <string name="nav_stats">Stats</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_title">Command Center</string>
+    <string name="dashboard_offline_badge">100% OFFLINE</string>
+    <string name="dashboard_ram_title">System Memory</string>
+    <string name="dashboard_storage_title">Internal Storage</string>
+    <string name="dashboard_ram_used_format">%1$.1f GB / %2$.1f GB</string>
+    <string name="dashboard_ram_free_format">%1$.1f GB free</string>
+    <string name="dashboard_storage_free_format">%1$.1f GB free of %2$.1f GB</string>
+    <string name="dashboard_hibernate_all">Hibernate All</string>
+    <string name="dashboard_hibernating">Stopping…</string>
+    <string name="dashboard_hibernate_hint">Tap to inspect active mode &amp; queued targets</string>
+    <string name="dashboard_phase1_notice">Phase 1 shell active. App scanner &amp; Safe-List arrive in Phase 2; Accessibility &amp; Shizuku engines arrive in Phase 3.</string>
+    <string name="dashboard_active_mode_label">Active Stop Mode</string>
+    <string name="dashboard_last_run_label">Last Hibernation</string>
+    <string name="dashboard_last_run_never">No runs yet</string>
+
+    <!-- Stop Modes -->
+    <string name="mode_accessibility_name">Mode A · Accessibility</string>
+    <string name="mode_accessibility_desc">Opens each app\'s System App Info screen and taps Force Stop for you. Works without ADB or root.</string>
+    <string name="mode_shizuku_name">Mode B · Shizuku (ADB)</string>
+    <string name="mode_shizuku_desc">Uses Wireless ADB / Shizuku shell privilege on Android 11+ to force-stop silently in milliseconds.</string>
+    <string name="mode_root_name">Mode C · Root Shell</string>
+    <string name="mode_root_desc">Uses superuser access to execute verified force-stop commands directly.</string>
+    <string name="mode_unavailable_name">Setup Required</string>
+    <string name="mode_unavailable_desc">Grant Accessibility or connect Shizuku so HibernatePro X can legitimately force-stop apps.</string>
+
+    <!-- Placeholder Phase Screens -->
+    <string name="apps_header">Installed Packages</string>
+    <string name="apps_phase_note">Phase 2 will populate live user/system apps, protected Safe-List locks, and Room whitelist/blacklist rules.</string>
+    <string name="profiles_header">Optimization Profiles</string>
+    <string name="profiles_phase_note">Select a preset or build custom Whitelist/Blacklist profiles in Phase 4.</string>
+    <string name="profile_gaming">Gaming</string>
+    <string name="profile_gaming_desc">Keep launchers &amp; game services; freeze heavy social &amp; sync apps.</string>
+    <string name="profile_battery">Battery Saver</string>
+    <string name="profile_battery_desc">Aggressive background cleanup for high-wake packages.</string>
+    <string name="profile_work">Work Focus</string>
+    <string name="profile_work_desc">Preserve communication &amp; calendar apps; pause media &amp; games.</string>
+    <string name="profile_night">Night Vault</string>
+    <string name="profile_night_desc">Deep standby overnight while protecting alarms &amp; dialer.</string>
+
+    <string name="automation_header">Automation &amp; Triggers</string>
+    <string name="automation_phase_note">Screen-off receiver, WorkManager schedules, Quick Settings tile, and Glance widget arrive in Phases 4–5.</string>
+    <string name="stats_header">Telemetry &amp; Drain</string>
+    <string name="stats_phase_note">UsageStatsManager wake frequency, battery heuristics, and run history charts arrive in Phase 6.</string>
+    <string name="settings_header">Engine &amp; Privacy</string>
+    <string name="settings_offline_title">Strict Offline Architecture</string>
+    <string name="settings_offline_desc">Zero INTERNET permission. No analytics, no cloud sync, no hidden network calls. All state stays in local Room &amp; DataStore.</string>
+    <string name="settings_dynamic_color">Dynamic Color (Android 12+)</string>
+    <string name="settings_dynamic_color_desc">Blend system wallpaper accents into AMOLED neon surfaces</string>
+    <string name="settings_theme_badge">AMOLED Neon VIP Theme</string>
+
+    <!-- Accessibility Content Descriptions -->
+    <string name="cd_hibernate_button">Hibernate all selected background apps</string>
+    <string name="cd_mode_status_icon">Active stop mode status</string>
+    <string name="cd_offline_shield">Offline privacy shield</string>
+</resources>

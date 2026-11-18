@@ -1,0 +1,6 @@
+{
+  "name": "HibernatePro X",
+  "description": "Offline background-app force-stop and optimizer with tiered Accessibility, Shizuku, and Root modes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
