@@ -36,5 +36,15 @@ class AccessibilityHelperRobolectricTest {
         assertTrue(context.packageName in protectedSet)
         assertTrue("com.android.systemui" in protectedSet)
         assertTrue("com.android.settings" in protectedSet)
+        assertTrue("com.transsion.hilauncher" in protectedSet)
+        assertTrue("com.transsion.phonemaster" in protectedSet)
+    }
+
+    @Test
+    fun `creates valid overlay permission intent for app package`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val intent = AccessibilityHelper.createOverlaySettingsIntent(context)
+        assertEquals(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, intent.action)
+        assertEquals("package:${context.packageName}", intent.dataString)
     }
 }

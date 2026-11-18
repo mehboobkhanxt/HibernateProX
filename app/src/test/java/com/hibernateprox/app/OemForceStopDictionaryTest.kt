@@ -12,6 +12,8 @@ class OemForceStopDictionaryTest {
         assertTrue(OemForceStopDictionary.isSettingsPackage("com.android.settings"))
         assertTrue(OemForceStopDictionary.isSettingsPackage("com.miui.securitycenter"))
         assertTrue(OemForceStopDictionary.isSettingsPackage("com.oplus.appdetail"))
+        assertTrue(OemForceStopDictionary.isSettingsPackage("com.transsion.phonemaster"))
+        assertTrue(OemForceStopDictionary.isSettingsPackage("com.transsion.appdetail"))
         assertFalse(OemForceStopDictionary.isSettingsPackage("com.whatsapp"))
         assertFalse(OemForceStopDictionary.isSettingsPackage(null))
     }

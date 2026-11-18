@@ -14,6 +14,8 @@ object OemForceStopDictionary {
         "com.samsung.android.lool",
         "com.huawei.systemmanager",
         "com.oneplus.security",
+        "com.transsion.phonemaster",
+        "com.transsion.appdetail",
     )
 
     val forceStopViewIds: Set<String> = setOf(

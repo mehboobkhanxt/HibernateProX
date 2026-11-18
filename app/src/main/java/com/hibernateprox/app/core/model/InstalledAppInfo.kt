@@ -8,4 +8,5 @@ data class InstalledAppInfo(
     val isStopped: Boolean,
     val isForegroundNow: Boolean = false,
     val ruleMode: AppRuleMode = AppRuleMode.DEFAULT,
+    val lastStopOutcome: ForceStopOutcome? = null,
 )

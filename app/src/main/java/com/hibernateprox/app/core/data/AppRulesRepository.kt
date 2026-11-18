@@ -47,6 +47,19 @@ class AppRulesRepository @Inject constructor(
     fun observeRecentLogs(limit: Int = 100): Flow<List<HibernationLogEntity>> =
         hibernationLogDao.observeRecentLogs(limit)
 
+    fun observeLatestOutcomeByPackage(): Flow<Map<String, ForceStopOutcome>> =
+        hibernationLogDao.observeRecentLogs(250).map { logs ->
+            val result = mutableMapOf<String, ForceStopOutcome>()
+            for (log in logs) {
+                if (!result.containsKey(log.packageName)) {
+                    runCatching { ForceStopOutcome.valueOf(log.outcome) }
+                        .getOrNull()
+                        ?.let { outcome -> result[log.packageName] = outcome }
+                }
+            }
+            result
+        }
+
     suspend fun recordHibernationLog(
         packageName: String,
         appLabel: String,

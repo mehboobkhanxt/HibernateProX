@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hibernateprox.app.core.data.AppRulesRepository
+import com.hibernateprox.app.core.datastore.UserPreferencesRepository
 import com.hibernateprox.app.core.engine.AccessibilityForceStopCoordinator
 import com.hibernateprox.app.core.engine.AccessibilityHelper
 import com.hibernateprox.app.core.engine.ForegroundAppTracker
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -39,9 +41,10 @@ data class AppsUiState(
     val searchQuery: String = "",
     val isLoading: Boolean = true,
     val isAccessibilityEnabled: Boolean = false,
+    val canDrawOverlays: Boolean = false,
     val showDisclosureDialog: Boolean = false,
+    val pendingOverlayApp: InstalledAppInfo? = null,
     val stopState: ForceStopState = ForceStopState.Idle,
-    val lastOutcomeMessage: Pair<String, ForceStopOutcome>? = null,
 )
 
 @HiltViewModel
@@ -51,6 +54,7 @@ class AppsViewModel @Inject constructor(
     private val foregroundAppTracker: ForegroundAppTracker,
     private val coordinator: AccessibilityForceStopCoordinator,
     private val appRulesRepository: AppRulesRepository,
+    private val userPreferencesRepository: UserPreferencesRepository,
 ) : ViewModel() {
 
     private val rawApps = MutableStateFlow<List<InstalledAppInfo>>(emptyList())
@@ -58,7 +62,9 @@ class AppsViewModel @Inject constructor(
     private val searchQuery = MutableStateFlow("")
     private val isLoading = MutableStateFlow(true)
     private val isAccessibilityEnabled = MutableStateFlow(false)
+    private val canDrawOverlays = MutableStateFlow(false)
     private val showDisclosureDialog = MutableStateFlow(false)
+    private val pendingOverlayApp = MutableStateFlow<InstalledAppInfo?>(null)
 
     val uiState: StateFlow<AppsUiState> = combine(
         rawApps,
@@ -66,10 +72,13 @@ class AppsViewModel @Inject constructor(
         searchQuery,
         isLoading,
         isAccessibilityEnabled,
+        canDrawOverlays,
         showDisclosureDialog,
+        pendingOverlayApp,
         coordinator.state,
         foregroundAppTracker.currentForegroundPackage,
         appRulesRepository.observeRuleMap(),
+        appRulesRepository.observeLatestOutcomeByPackage(),
     ) { values ->
         @Suppress("UNCHECKED_CAST")
         val allApps = values[0] as List<InstalledAppInfo>
@@ -77,11 +86,15 @@ class AppsViewModel @Inject constructor(
         val query = values[2] as String
         val loading = values[3] as Boolean
         val a11yEnabled = values[4] as Boolean
-        val showDisclosure = values[5] as Boolean
-        val stopState = values[6] as ForceStopState
-        val fgPkg = values[7] as String?
+        val overlayEnabled = values[5] as Boolean
+        val showDisclosure = values[6] as Boolean
+        val pendingApp = values[7] as InstalledAppInfo?
+        val stopState = values[8] as ForceStopState
+        val fgPkg = values[9] as String?
         @Suppress("UNCHECKED_CAST")
-        val ruleMap = values[8] as Map<String, AppRuleMode>
+        val ruleMap = values[10] as Map<String, AppRuleMode>
+        @Suppress("UNCHECKED_CAST")
+        val latestOutcomes = values[11] as Map<String, ForceStopOutcome>
 
         val filtered = allApps
             .map { app ->
@@ -92,6 +105,7 @@ class AppsViewModel @Inject constructor(
                     } else {
                         ruleMap[app.packageName] ?: AppRuleMode.DEFAULT
                     },
+                    lastStopOutcome = latestOutcomes[app.packageName],
                 )
             }
             .filter { app ->
@@ -110,16 +124,16 @@ class AppsViewModel @Inject constructor(
                 matchesFilter && matchesQuery
             }
 
-        val completed = stopState as? ForceStopState.Completed
         AppsUiState(
             apps = filtered,
             filter = activeFilter,
             searchQuery = query,
             isLoading = loading,
             isAccessibilityEnabled = a11yEnabled,
+            canDrawOverlays = overlayEnabled,
             showDisclosureDialog = showDisclosure,
+            pendingOverlayApp = pendingApp,
             stopState = stopState,
-            lastOutcomeMessage = completed?.let { it.appLabel to it.outcome },
         )
     }.stateIn(
         scope = viewModelScope,
@@ -136,6 +150,7 @@ class AppsViewModel @Inject constructor(
             isLoading.value = true
             appRulesRepository.ensureDefaultProfilesSeeded()
             isAccessibilityEnabled.value = AccessibilityHelper.isAccessibilityServiceEnabled(context)
+            canDrawOverlays.value = AccessibilityHelper.canDrawOverlays(context)
             rawApps.value = scanner.scanInstalledApps(
                 foregroundAppTracker.currentForegroundPackage.value,
             )
@@ -159,22 +174,54 @@ class AppsViewModel @Inject constructor(
     }
 
     fun forceStopApp(app: InstalledAppInfo) {
+        if (app.isProtectedSafeList) return
         if (!AccessibilityHelper.isAccessibilityServiceEnabled(context)) {
             showDisclosureDialog.value = true
             return
         }
         viewModelScope.launch {
-            val outcome = coordinator.requestForceStop(app.packageName, app.label)
-            appRulesRepository.recordHibernationLog(
-                packageName = app.packageName,
-                appLabel = app.label,
-                outcome = outcome,
-                modeUsed = StopMode.ACCESSIBILITY,
-            )
-            rawApps.value = scanner.scanInstalledApps(
-                foregroundAppTracker.currentForegroundPackage.value,
-            )
+            val prefs = userPreferencesRepository.prefsFlow.first()
+            if (!AccessibilityHelper.canDrawOverlays(context) && !prefs.overlayPromptDismissed) {
+                pendingOverlayApp.value = app
+                return@launch
+            }
+            executeForceStop(app)
         }
+    }
+
+    fun grantOverlayPermission() {
+        pendingOverlayApp.value = null
+        runCatching {
+            context.startActivity(AccessibilityHelper.createOverlaySettingsIntent(context))
+        }
+    }
+
+    fun continueWithoutOverlay() {
+        val target = pendingOverlayApp.value
+        pendingOverlayApp.value = null
+        viewModelScope.launch {
+            userPreferencesRepository.setOverlayPromptDismissed(true)
+            if (target != null) {
+                executeForceStop(target)
+            }
+        }
+    }
+
+    fun dismissOverlayPrompt() {
+        pendingOverlayApp.value = null
+    }
+
+    private suspend fun executeForceStop(app: InstalledAppInfo) {
+        val outcome = coordinator.requestForceStop(app.packageName, app.label)
+        appRulesRepository.recordHibernationLog(
+            packageName = app.packageName,
+            appLabel = app.label,
+            outcome = outcome,
+            modeUsed = StopMode.ACCESSIBILITY,
+        )
+        rawApps.value = scanner.scanInstalledApps(
+            foregroundAppTracker.currentForegroundPackage.value,
+        )
     }
 
     fun openAppInfoManually(packageName: String) {

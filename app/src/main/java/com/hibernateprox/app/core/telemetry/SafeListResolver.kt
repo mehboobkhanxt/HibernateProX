@@ -29,6 +29,8 @@ class SafeListResolver @Inject constructor(
         "com.android.vending",
         "com.miui.securitycenter",
         "com.samsung.android.lool",
+        "com.transsion.hilauncher",
+        "com.transsion.phonemaster",
     )
 
     fun resolveProtectedPackages(): Set<String> {

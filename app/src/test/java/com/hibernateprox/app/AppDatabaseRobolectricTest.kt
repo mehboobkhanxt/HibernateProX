@@ -56,6 +56,7 @@ class AppDatabaseRobolectricTest {
         )
         val perms = pkgInfo.requestedPermissions?.toList().orEmpty()
         assertFalse(Manifest.permission.INTERNET in perms)
+        assertEquals(true, Manifest.permission.SYSTEM_ALERT_WINDOW in perms)
     }
 
     @Test
@@ -74,7 +75,7 @@ class AppDatabaseRobolectricTest {
     }
 
     @Test
-    fun `records hibernation logs and seeds four built-in profiles`() = runTest {
+    fun `records hibernation logs, seeds built-in profiles, and returns latest outcome per package`() = runTest {
         repository.ensureDefaultProfilesSeeded()
         val profiles = repository.observeProfiles().first()
         assertEquals(4, profiles.size)
@@ -82,12 +83,28 @@ class AppDatabaseRobolectricTest {
         repository.recordHibernationLog(
             packageName = "com.sample.social",
             appLabel = "Social App",
+            outcome = ForceStopOutcome.BUTTON_NOT_FOUND,
+            modeUsed = StopMode.ACCESSIBILITY,
+        )
+        repository.recordHibernationLog(
+            packageName = "com.sample.social",
+            appLabel = "Social App",
             outcome = ForceStopOutcome.VERIFIED_STOPPED,
             modeUsed = StopMode.ACCESSIBILITY,
         )
+        repository.recordHibernationLog(
+            packageName = "com.sample.video",
+            appLabel = "Video App",
+            outcome = ForceStopOutcome.BUTTON_NOT_FOUND,
+            modeUsed = StopMode.ACCESSIBILITY,
+        )
+
         val logs = repository.observeRecentLogs().first()
-        assertEquals(1, logs.size)
-        assertEquals("com.sample.social", logs.first().packageName)
+        assertEquals(3, logs.size)
         assertNotNull(repository.observeLastRunTimestamp().first())
+
+        val latestOutcomes = repository.observeLatestOutcomeByPackage().first()
+        assertEquals(ForceStopOutcome.VERIFIED_STOPPED, latestOutcomes["com.sample.social"])
+        assertEquals(ForceStopOutcome.BUTTON_NOT_FOUND, latestOutcomes["com.sample.video"])
     }
 }

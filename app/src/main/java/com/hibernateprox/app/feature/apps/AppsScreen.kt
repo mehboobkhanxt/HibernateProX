@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccessibilityNew
+import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.PowerSettingsNew
@@ -54,6 +55,7 @@ import com.hibernateprox.app.core.model.ForceStopOutcome
 import com.hibernateprox.app.core.model.ForceStopState
 import com.hibernateprox.app.core.model.InstalledAppInfo
 import com.hibernateprox.app.ui.components.AccessibilityDisclosureDialog
+import com.hibernateprox.app.ui.components.OverlayDisclosureDialog
 
 @Composable
 fun AppsScreen(
@@ -71,6 +73,14 @@ fun AppsScreen(
         AccessibilityDisclosureDialog(
             onAccept = viewModel::openAccessibilitySettings,
             onDecline = viewModel::dismissDisclosure,
+        )
+    }
+
+    if (state.pendingOverlayApp != null) {
+        OverlayDisclosureDialog(
+            onGrantPermission = viewModel::grantOverlayPermission,
+            onContinueWithoutOverlay = viewModel::continueWithoutOverlay,
+            onDismiss = viewModel::dismissOverlayPrompt,
         )
     }
 
@@ -138,6 +148,43 @@ fun AppsScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(text = stringResource(R.string.action_enable_accessibility))
+                    }
+                }
+            }
+        } else if (!state.canDrawOverlays) {
+            item {
+                NeonGlassCard(
+                    accentColor = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 680.dp)
+                        .testTag("apps_overlay_prompt_card"),
+                ) {
+                    Text(
+                        text = stringResource(R.string.overlay_permission_card_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(R.string.overlay_permission_card_desc),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    OutlinedButton(
+                        onClick = viewModel::grantOverlayPermission,
+                        modifier = Modifier
+                            .minimumInteractiveComponentSize()
+                            .testTag("apps_grant_overlay_button"),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Layers,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = stringResource(R.string.overlay_grant_button))
                     }
                 }
             }
@@ -355,6 +402,23 @@ private fun AppPackageRow(
             )
         }
 
+        if (app.lastStopOutcome != null) {
+            Spacer(modifier = Modifier.height(6.dp))
+            val isStoppedOutcome = app.lastStopOutcome == ForceStopOutcome.VERIFIED_STOPPED ||
+                app.lastStopOutcome == ForceStopOutcome.ALREADY_STOPPED
+            NeonStatusPill(
+                label = stringResource(
+                    if (isStoppedOutcome) {
+                        R.string.app_last_outcome_stopped
+                    } else {
+                        R.string.app_last_outcome_failed
+                    },
+                ),
+                accentColor = if (isStoppedOutcome) neon.emeraldPulse else neon.crimsonAlert,
+                modifier = Modifier.testTag("outcome_pill_${app.packageName}"),
+            )
+        }
+
         if (!app.isProtectedSafeList) {
             Spacer(modifier = Modifier.height(8.dp))
             Row(
@@ -398,22 +462,22 @@ private fun AppPackageRow(
                 Text(stringResource(R.string.action_open_app_info))
             }
 
-            if (!app.isProtectedSafeList) {
-                Button(
-                    onClick = onForceStop,
-                    enabled = !app.isStopped && app.ruleMode != AppRuleMode.WHITELIST,
-                    modifier = Modifier
-                        .minimumInteractiveComponentSize()
-                        .testTag("force_stop_btn_${app.packageName}"),
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.PowerSettingsNew,
-                        contentDescription = stringResource(R.string.cd_force_stop_app, app.label),
-                        modifier = Modifier.size(16.dp),
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(stringResource(R.string.action_force_stop))
-                }
+            Button(
+                onClick = onForceStop,
+                enabled = !app.isProtectedSafeList &&
+                    !app.isStopped &&
+                    app.ruleMode != AppRuleMode.WHITELIST,
+                modifier = Modifier
+                    .minimumInteractiveComponentSize()
+                    .testTag("force_stop_btn_${app.packageName}"),
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.PowerSettingsNew,
+                    contentDescription = stringResource(R.string.cd_force_stop_app, app.label),
+                    modifier = Modifier.size(16.dp),
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(stringResource(R.string.action_force_stop))
             }
         }
     }

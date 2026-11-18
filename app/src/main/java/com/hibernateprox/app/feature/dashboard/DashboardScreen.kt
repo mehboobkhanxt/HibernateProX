@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccessibilityNew
+import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.Memory
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.Storage
@@ -23,6 +24,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
@@ -34,6 +36,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -43,8 +46,10 @@ import com.hibernateprox.app.R
 import com.hibernateprox.app.core.designsystem.LocalNeonColors
 import com.hibernateprox.app.core.designsystem.NeonGlassCard
 import com.hibernateprox.app.core.designsystem.NeonStatusPill
+import com.hibernateprox.app.core.model.ForceStopOutcome
 import com.hibernateprox.app.core.model.StopMode
 import com.hibernateprox.app.ui.components.AccessibilityDisclosureDialog
+import com.hibernateprox.app.ui.components.OverlayDisclosureDialog
 
 @Composable
 fun DashboardScreen(
@@ -62,6 +67,14 @@ fun DashboardScreen(
         AccessibilityDisclosureDialog(
             onAccept = viewModel::openAccessibilitySettings,
             onDecline = viewModel::dismissDisclosure,
+        )
+    }
+
+    if (state.showOverlayDialog) {
+        OverlayDisclosureDialog(
+            onGrantPermission = viewModel::grantOverlayPermission,
+            onContinueWithoutOverlay = viewModel::continueWithoutOverlay,
+            onDismiss = viewModel::dismissOverlayDialog,
         )
     }
 
@@ -120,15 +133,55 @@ fun DashboardScreen(
                         .testTag("last_batch_summary_card"),
                 ) {
                     Text(
+                        text = stringResource(R.string.batch_results_title),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
                         text = stringResource(
                             R.string.stop_batch_summary,
                             summary.stoppedCount,
                             summary.alreadyIdleCount,
                             summary.failedCount,
                         ),
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
+                    if (summary.items.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            summary.items.take(10).forEach { item ->
+                                val ok = item.outcome == ForceStopOutcome.VERIFIED_STOPPED ||
+                                    item.outcome == ForceStopOutcome.ALREADY_STOPPED
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        text = item.appLabel,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    NeonStatusPill(
+                                        label = stringResource(
+                                            if (ok) {
+                                                R.string.app_last_outcome_stopped
+                                            } else {
+                                                R.string.app_last_outcome_failed
+                                            },
+                                        ),
+                                        accentColor = if (ok) neon.emeraldPulse else neon.crimsonAlert,
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -204,6 +257,29 @@ fun DashboardScreen(
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary,
                         )
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    if (state.canDrawOverlays) {
+                        NeonStatusPill(
+                            label = stringResource(R.string.overlay_permission_granted),
+                            accentColor = neon.emeraldPulse,
+                            icon = Icons.Rounded.Layers,
+                        )
+                    } else {
+                        OutlinedButton(
+                            onClick = viewModel::grantOverlayPermission,
+                            modifier = Modifier
+                                .minimumInteractiveComponentSize()
+                                .testTag("dashboard_grant_overlay_button"),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Layers,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(stringResource(R.string.overlay_grant_button))
+                        }
                     }
                 }
             }
@@ -297,6 +373,12 @@ fun DashboardScreen(
                     text = stringResource(state.activeMode.descriptionRes),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = stringResource(R.string.overlay_honest_note),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
         }

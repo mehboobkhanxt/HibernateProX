@@ -13,6 +13,7 @@ import javax.inject.Singleton
 data class UserPrefs(
     val useDynamicColor: Boolean = false,
     val selectedProfileKey: String = "battery",
+    val overlayPromptDismissed: Boolean = false,
 )
 
 @Singleton
@@ -22,12 +23,14 @@ class UserPreferencesRepository @Inject constructor(
     private object Keys {
         val DYNAMIC_COLOR = booleanPreferencesKey("use_dynamic_color")
         val SELECTED_PROFILE = stringPreferencesKey("selected_profile_key")
+        val OVERLAY_DISMISSED = booleanPreferencesKey("overlay_prompt_dismissed")
     }
 
     val prefsFlow: Flow<UserPrefs> = dataStore.data.map { prefs ->
         UserPrefs(
             useDynamicColor = prefs[Keys.DYNAMIC_COLOR] ?: false,
             selectedProfileKey = prefs[Keys.SELECTED_PROFILE] ?: "battery",
+            overlayPromptDismissed = prefs[Keys.OVERLAY_DISMISSED] ?: false,
         )
     }
 
@@ -37,5 +40,9 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun setSelectedProfile(key: String) {
         dataStore.edit { it[Keys.SELECTED_PROFILE] = key }
+    }
+
+    suspend fun setOverlayPromptDismissed(dismissed: Boolean) {
+        dataStore.edit { it[Keys.OVERLAY_DISMISSED] = dismissed }
     }
 }

@@ -118,4 +118,22 @@
     <string name="apps_system_tag">SYSTEM</string>
     <string name="apps_user_tag">USER</string>
     <string name="dashboard_last_run_at">Last run: %1$s</string>
+
+    <!-- Hibernate Wait Overlay & Guided Disclosure -->
+    <string name="overlay_disclosure_title">Hibernate Wait Overlay</string>
+    <string name="overlay_disclosure_body">In Accessibility mode, Android requires briefly opening each app\'s System Settings &gt; App Info screen to tap Force Stop.\n\nGrant \"Display over other apps\" so HibernatePro X can show a clean progress ring with a Cancel button over Settings while stopping apps.\n\nHonest Note: Accessibility mode switches through Settings behind this overlay. Shizuku / Root mode (Phase 3) is fully silent.</string>
+    <string name="overlay_grant_button">Grant Overlay Permission</string>
+    <string name="overlay_continue_without">Run Without Overlay</string>
+    <string name="overlay_hibernating_progress">Hibernating %1$d of %2$d</string>
+    <string name="overlay_hibernating_single">Hibernating 1 of 1</string>
+    <string name="overlay_honest_note">Accessibility briefly opens System App Info behind this overlay. Shizuku/Root mode is silent.</string>
+    <string name="overlay_cancel">Cancel</string>
+    <string name="overlay_permission_card_title">Wait Overlay Optional</string>
+    <string name="overlay_permission_card_desc">Grant Display Over Other Apps to hide System App Info screens with a progress ring during Accessibility hibernation.</string>
+    <string name="overlay_permission_granted">Wait Overlay Ready</string>
+
+    <!-- Per-App Verified Stop Status -->
+    <string name="app_last_outcome_stopped">Last: Stopped</string>
+    <string name="app_last_outcome_failed">Last: Failed</string>
+    <string name="batch_results_title">Verified Run Results (FLAG_STOPPED)</string>
 </resources>

@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface HibernationLogDao {
-    @Query("SELECT * FROM hibernation_logs ORDER BY timestampMs DESC LIMIT :limit")
+    @Query("SELECT * FROM hibernation_logs ORDER BY timestampMs DESC, id DESC LIMIT :limit")
     fun observeRecentLogs(limit: Int = 100): Flow<List<HibernationLogEntity>>
 
     @Query("SELECT MAX(timestampMs) FROM hibernation_logs")

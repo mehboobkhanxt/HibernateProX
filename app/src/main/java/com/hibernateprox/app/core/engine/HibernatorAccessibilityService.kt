@@ -49,7 +49,7 @@ class HibernatorAccessibilityService : AccessibilityService() {
         val now = System.currentTimeMillis()
         if (now - lastActionTimeMs < ACTION_DEBOUNCE_MS) return
 
-        val root = rootInActiveWindow ?: return
+        val root = findSettingsWindowRoot() ?: return
         coordinator.onSettingsWindowEntered()
 
         if (coordinator.isWaitingForConfirm) {
@@ -128,6 +128,18 @@ class HibernatorAccessibilityService : AccessibilityService() {
             if (found != null) return found
         }
         return null
+    }
+
+    private fun findSettingsWindowRoot(): AccessibilityNodeInfo? {
+        val activeRoot = rootInActiveWindow
+        val activePkg = activeRoot?.packageName?.toString()
+        if (OemForceStopDictionary.isSettingsPackage(activePkg)) {
+            return activeRoot
+        }
+        return windows.orEmpty()
+            .asSequence()
+            .mapNotNull { it.root }
+            .firstOrNull { OemForceStopDictionary.isSettingsPackage(it.packageName?.toString()) }
     }
 
     private fun isNodeOrParentEnabled(node: AccessibilityNodeInfo): Boolean {
